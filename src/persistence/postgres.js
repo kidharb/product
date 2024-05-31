@@ -7,7 +7,8 @@ let client;
 async function init() {
     const host = process.env.POSTGRES_HOST;
     const user = process.env.POSTGRES_USER;
-    password = fs.readFileSync(process.env.PASSWORD_FILE, 'utf8');
+    const password = process.env.POSTGRES_PW;
+    //password = fs.readFileSync(process.env.PASSWORD_FILE, 'utf8');
     const database = process.env.POSTGRES_DB;
 
     client = new Client({
@@ -18,7 +19,7 @@ async function init() {
     });
 
     return client.connect().then(async () => {
-        console.log(`Connected to postgres db at host ${HOST}`);
+        console.log(`Connected to postgres db at host`, host);
         // Run the SQL instruction to create the table if it does not exist
         await client.query('CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean)');
         console.log('Connected to db and created table todo_items if it did not exist');
