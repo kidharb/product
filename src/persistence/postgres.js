@@ -7,9 +7,11 @@ let client;
 async function init() {
     const host = process.env.POSTGRES_HOST;
     const user = process.env.POSTGRES_USER;
-    const password = process.env.POSTGRES_PW;
-    //password = fs.readFileSync(process.env.PASSWORD_FILE, 'utf8');
     const database = process.env.POSTGRES_DB;
+    password = fs.readFileSync(process.env.POSTGRES_PASSWORD_FILE).toString()
+
+    // password read from readfilesync has a newline at the end trim it, to remove it
+    password = password.trim();
 
     client = new Client({
         host,
@@ -21,8 +23,8 @@ async function init() {
     return client.connect().then(async () => {
         console.log(`Connected to postgres db at host`, host);
         // Run the SQL instruction to create the table if it does not exist
-        await client.query('CREATE TABLE IF NOT EXISTS todo_items (id varchar(36), name varchar(255), completed boolean)');
-        console.log('Connected to db and created table todo_items if it did not exist');
+        await client.query('CREATE TABLE IF NOT EXISTS product_list (id varchar(36), url varchar(255), created_at timestamptz NOT NULL DEFAULT now())');
+        console.log('Connected to db and created table product_list if it did not exist');
     }).catch(err => {
         console.error('Unable to connect to the database:', err);
     });
@@ -30,11 +32,11 @@ async function init() {
 
 // Get all items from the table
 async function getItems() {
-  return client.query('SELECT * FROM todo_items').then(res => {
+  return client.query('SELECT * FROM product_list').then(res => {
     return res.rows.map(row => ({
       id: row.id,
-      name: row.name,
-      completed: row.completed
+      url: row.url,
+      created_at: row.created_at
     }));
   }).catch(err => {
     console.error('Unable to get items:', err);
@@ -53,7 +55,7 @@ async function teardown() {
   
 // Get one item by id from the table
 async function getItem(id) {
-    return client.query('SELECT * FROM todo_items WHERE id = $1', [id]).then(res => {
+    return client.query('SELECT * FROM product_list WHERE id = $1', [id]).then(res => {
       return res.rows.length > 0 ? res.rows[0] : null;
     }).catch(err => {
       console.error('Unable to get item:', err);
@@ -62,7 +64,7 @@ async function getItem(id) {
   
 // Store one item in the table
 async function storeItem(item) {
-    return client.query('INSERT INTO todo_items(id, name, completed) VALUES($1, $2, $3)', [item.id, item.name, item.completed]).then(() => {
+    return client.query('INSERT INTO product_list(id, url, created_at) VALUES($1, $2, $3)', [item.id, item.url, item.created_at]).then(() => {
       console.log('Stored item:', item);
     }).catch(err => {
       console.error('Unable to store item:', err);
@@ -71,7 +73,7 @@ async function storeItem(item) {
   
 // Update one item by id in the table
 async function updateItem(id, item) {
-    return client.query('UPDATE todo_items SET name = $1, completed = $2 WHERE id = $3', [item.name, item.completed, id]).then(() => {
+    return client.query('UPDATE product_list SET url = $1, created_at = $2 WHERE id = $3', [item.url, item.created_at, id]).then(() => {
       console.log('Updated item:', item);
     }).catch(err => {
       console.error('Unable to update item:', err);
@@ -80,7 +82,7 @@ async function updateItem(id, item) {
   
 // Remove one item by id from the table
 async function removeItem(id) {
-    return client.query('DELETE FROM todo_items WHERE id = $1', [id]).then(() => {
+    return client.query('DELETE FROM product_list WHERE id = $1', [id]).then(() => {
       console.log('Removed item:', id);
     }).catch(err => {
       console.error('Unable to remove item:', err);
