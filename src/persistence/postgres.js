@@ -23,7 +23,7 @@ async function init() {
     return client.connect().then(async () => {
         console.log(`Connected to postgres db at host`, host);
         // Run the SQL instruction to create the table if it does not exist
-        await client.query('CREATE TABLE IF NOT EXISTS product_list (id varchar(36), url varchar(255), created_at timestamptz NOT NULL DEFAULT now())');
+        await client.query('CREATE TABLE IF NOT EXISTS product_list (id varchar(36), url varchar(255), created_at timestamptz default current_timestamp)');
         console.log('Connected to db and created table product_list if it did not exist');
     }).catch(err => {
         console.error('Unable to connect to the database:', err);
@@ -64,7 +64,7 @@ async function getItem(id) {
   
 // Store one item in the table
 async function storeItem(item) {
-    return client.query('INSERT INTO product_list(id, url, created_at) VALUES($1, $2, $3)', [item.id, item.url, item.created_at]).then(() => {
+    return client.query('INSERT INTO product_list(id, url) VALUES($1, $2)', [item.id, item.url]).then(() => {
       console.log('Stored item:', item);
     }).catch(err => {
       console.error('Unable to store item:', err);
@@ -73,7 +73,7 @@ async function storeItem(item) {
   
 // Update one item by id in the table
 async function updateItem(id, item) {
-    return client.query('UPDATE product_list SET url = $1, created_at = $2 WHERE id = $3', [item.url, item.created_at, id]).then(() => {
+    return client.query('UPDATE product_list SET url = $1 WHERE id = $2', [item.url, id]).then(() => {
       console.log('Updated item:', item);
     }).catch(err => {
       console.error('Unable to update item:', err);

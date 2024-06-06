@@ -4,14 +4,14 @@ function App() {
         <Container>
             <Row>
                 <Col md={{ offset: 3, span: 6 }}>
-                    <TodoListCard />
+                    <Product />
                 </Col>
             </Row>
         </Container>
     );
 }
 
-function TodoListCard() {
+function Product() {
     const [items, setItems] = React.useState(null);
 
     React.useEffect(() => {
@@ -78,7 +78,7 @@ function AddItemForm({ onNewItem }) {
         setSubmitting(true);
         fetch('/items', {
             method: 'POST',
-            body: JSON.stringify({ name: newItem }),
+            body: JSON.stringify({ url: newItem }),
             headers: { 'Content-Type': 'application/json' },
         })
             .then(r => r.json())
@@ -121,7 +121,7 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
         fetch(`/items/${item.id}`, {
             method: 'PUT',
             body: JSON.stringify({
-                name: item.name,
+                url: item.url,
                 completed: !item.completed,
             }),
             headers: { 'Content-Type': 'application/json' },
@@ -158,8 +158,8 @@ function ItemDisplay({ item, onItemUpdate, onItemRemoval }) {
                         />
                     </Button>
                 </Col>
-                <Col xs={10} className="name">
-                    {item.name}
+                <Col xs={10} className="url">
+                    {item.url}
                 </Col>
                 <Col xs={1} className="text-center remove">
                     <Button
