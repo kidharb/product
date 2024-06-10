@@ -8,10 +8,7 @@ async function init() {
     const host = process.env.POSTGRES_HOST;
     const user = process.env.POSTGRES_USER;
     const database = process.env.POSTGRES_DB;
-    password = fs.readFileSync(process.env.POSTGRES_PASSWORD_FILE).toString()
-
-    // password read from readfilesync has a newline at the end trim it, to remove it
-    password = password.trim();
+    const password = process.env.POSTGRES_PASSWORD;
 
     client = new Client({
         host,
