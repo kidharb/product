@@ -7,6 +7,8 @@ let client;
 async function init() {
     const host = process.env.POSTGRES_HOST;
     const user = process.env.POSTGRES_USER;
+    const password = process.env.POSTGRES_PW;
+    //password = fs.readFileSync(process.env.PASSWORD_FILE, 'utf8');
     const database = process.env.POSTGRES_DB;
     const password = process.env.POSTGRES_PASSWORD;
 
@@ -29,11 +31,11 @@ async function init() {
 
 // Get all items from the table
 async function getItems() {
-  return client.query('SELECT * FROM product_list').then(res => {
+  return client.query('SELECT * FROM todo_items').then(res => {
     return res.rows.map(row => ({
       id: row.id,
-      url: row.url,
-      created_at: row.created_at
+      name: row.name,
+      completed: row.completed
     }));
   }).catch(err => {
     console.error('Unable to get items:', err);
@@ -52,7 +54,7 @@ async function teardown() {
   
 // Get one item by id from the table
 async function getItem(id) {
-    return client.query('SELECT * FROM product_list WHERE id = $1', [id]).then(res => {
+    return client.query('SELECT * FROM todo_items WHERE id = $1', [id]).then(res => {
       return res.rows.length > 0 ? res.rows[0] : null;
     }).catch(err => {
       console.error('Unable to get item:', err);
@@ -79,7 +81,7 @@ async function updateItem(id, item) {
   
 // Remove one item by id from the table
 async function removeItem(id) {
-    return client.query('DELETE FROM product_list WHERE id = $1', [id]).then(() => {
+    return client.query('DELETE FROM todo_items WHERE id = $1', [id]).then(() => {
       console.log('Removed item:', id);
     }).catch(err => {
       console.error('Unable to remove item:', err);
