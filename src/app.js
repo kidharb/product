@@ -6,6 +6,7 @@ var session = require('express-session');
 var csrf = require('csurf');
 var passport = require('passport');
 var logger = require('morgan');
+const db = require('./persistence/db')
 
 // pass the session to the connect sqlite3 module
 // allowing it to inherit from session.Store
@@ -64,6 +65,13 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   res.render('error');
+});
+
+db.init().then(() => {
+    app.listen(3001, () => console.log('Listening on port 3001'));
+}).catch((err) => {
+    console.error(err);
+    process.exit(1);
 });
 
 module.exports = app;
