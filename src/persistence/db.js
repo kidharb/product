@@ -1,41 +1,4 @@
-//var sqlite3 = require('sqlite3');
 const { Client } = require('pg');
-var mkdirp = require('mkdirp');
-var crypto = require('crypto');
-
-/*
-mkdirp.sync('./var/db');
-
-var db = new sqlite3.Database('./var/db/todos.db');
-
-db.serialize(function() {
-  // create the database schema for the todos app
-  db.run("CREATE TABLE IF NOT EXISTS users ( \
-    id INTEGER PRIMARY KEY, \
-    username TEXT UNIQUE, \
-    hashed_password BLOB, \
-    salt BLOB \
-  )");
-  
-  db.run("CREATE TABLE IF NOT EXISTS todos ( \
-    id INTEGER PRIMARY KEY, \
-    owner_id INTEGER NOT NULL, \
-    title TEXT NOT NULL, \
-    completed INTEGER \
-  )");
-  
-  // create an initial user (username: alice, password: letmein)
-  var salt = crypto.randomBytes(16);
-  db.run('INSERT OR IGNORE INTO users (username, hashed_password, salt) VALUES (?, ?, ?)', [
-    'alice',
-    crypto.pbkdf2Sync('letmein', salt, 310000, 32, 'sha256'),
-    salt
-  ]);
-});
-
-module.exports = db;
-*/
-
 let client;
 
 async function init() {
@@ -56,84 +19,61 @@ async function init() {
         // Run the SQL instruction to create the table if it does not exist
         //await client.query('CREATE TABLE IF NOT EXISTS product_list (id varchar(36), url varchar(255), created_at timestamptz default current_timestamp)');
 
+        console.log('Creating users table if it does not exists');
         await client.query("CREATE TABLE IF NOT EXISTS users ( \
-                            id INTEGER PRIMARY KEY, \
+                            id SERIAL PRIMARY KEY, \
                             username TEXT UNIQUE, \
-                            hashed_password varchar, \
-                            salt varchar \
+                            hashed_password varchar(100) \
                           )");
-        console.log('Connected to db and created table product_list if it did not exist');
+        console.log('Creating todos table if it does not exist');
+        await client.query("CREATE TABLE IF NOT EXISTS todos ( \
+                            id SERIAL PRIMARY KEY, \
+                            owner_id INTEGER NOT NULL, \
+                            title varchar(100) NOT NULL, \
+                            completed INTEGER \
+                          )");
+        console.log('Enabling pgcrypto extension in database');
+        await client.query("CREATE EXTENSION IF NOT EXISTS pgcrypto;");
+        //console.log('Creating user alice');
+        //await client.query("UPSERT INTO users (username, hashed_password) VALUES ('alice', crypt('letmein', gen_salt('bf')))");
     }).catch(err => {
         console.error('Unable to connect to the database:', err);
     });
 }
 
+async function signin(username, password, cb) {
+  client.query('SELECT * FROM users WHERE username = ?', [ username ], function(err, row) {
+    if (err) { return cb(err); }
+    if (!row) { return cb(null, false, { message: 'Incorrect username or password.'   }); }
+  client.query("SELECT id FROM users WHERE username = ? AND password = crypt(? , password)", [ username, password ]);
+})}
+
+
+
+
+
+
+
+
+/*      if (err) { return cb(err); }
+      if (!crypto.timingSafeEqual(row.hashed_password, hashedPassword)) {
+        return cb(null, false, { message: 'Incorrect username or password.' });
+      }
+      return cb(null, row); */
+
 // Get all items from the table
-async function getItems() {
-  return client.query('SELECT * FROM product_list').then(res => {
-    return res.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      completed: row.completed
-    }));
-  }).catch(err => {
-    console.error('Unable to get items:', err);
-  });
+async function signup(req, res, signup) {
+    if (err) { return next(err); }
+    client.query("INSERT INTO users (username, hashed_password) VALUES (?, crypt(req.body.password, gen_salt('bf')))", [
+      req.body.username
+    ]);
 }
+  
+// Get all items from the table
 
-
-// End the connection
-async function teardown() {
-  return client.end().then(() => {
-    console.log('Client ended');
-  }).catch(err => {
-    console.error('Unable to end client:', err);
-  });
-}
-  
-// Get one item by id from the table
-async function getItem(id) {
-    return client.query('SELECT * FROM product_list WHERE id = $1', [id]).then(res => {
-      return res.rows.length > 0 ? res.rows[0] : null;
-    }).catch(err => {
-      console.error('Unable to get item:', err);
-    });
-}
-  
-// Store one item in the table
-async function storeItem(item) {
-    return client.query('INSERT INTO product_list(id, url) VALUES($1, $2)', [item.id, item.url]).then(() => {
-      console.log('Stored item:', item);
-    }).catch(err => {
-      console.error('Unable to store item:', err);
-    });
-}
-  
-// Update one item by id in the table
-async function updateItem(id, item) {
-    return client.query('UPDATE product_list SET url = $1 WHERE id = $2', [item.url, id]).then(() => {
-      console.log('Updated item:', item);
-    }).catch(err => {
-      console.error('Unable to update item:', err);
-    });
-}
-  
-// Remove one item by id from the table
-async function removeItem(id) {
-    return client.query('DELETE FROM product_list WHERE id = $1', [id]).then(() => {
-      console.log('Removed item:', id);
-    }).catch(err => {
-      console.error('Unable to remove item:', err);
-    });
-}
-  
 module.exports = {
   init,
-  teardown,
-  getItems,
-  getItem,
-  storeItem,
-  updateItem,
-  removeItem,
+  signin,
+  signup,
 };
 

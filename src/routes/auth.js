@@ -17,18 +17,7 @@ var db = require('../persistence/db');
  * user is authenticated; otherwise, not.
  */
 passport.use(new LocalStrategy(function verify(username, password, cb) {
-  db.get('SELECT * FROM users WHERE username = ?', [ username ], function(err, row) {
-    if (err) { return cb(err); }
-    if (!row) { return cb(null, false, { message: 'Incorrect username or password.' }); }
-    
-    crypto.pbkdf2(password, row.salt, 310000, 32, 'sha256', function(err, hashedPassword) {
-      if (err) { return cb(err); }
-      if (!crypto.timingSafeEqual(row.hashed_password, hashedPassword)) {
-        return cb(null, false, { message: 'Incorrect username or password.' });
-      }
-      return cb(null, row);
-    });
-  });
+  db.signin(username, password, cb);
 }));
 
 /* Configure session management.
@@ -156,14 +145,16 @@ router.get('/signup', function(req, res, next) {
  * successfully created, the user is logged in.
  */
 router.post('/signup', function(req, res, next) {
-  var salt = crypto.randomBytes(16);
-  crypto.pbkdf2(req.body.password, salt, 310000, 32, 'sha256', function(err, hashedPassword) {
+    db.signup(req, res, next);
+/*
     if (err) { return next(err); }
-    db.run('INSERT INTO users (username, hashed_password, salt) VALUES (?, ?, ?)', [
-      req.body.username,
-      hashedPassword,
-      salt
-    ], function(err) {
+    client.query("INSERT INTO users (username, hashed_password) VALUES (?, crypt(req.body.password, gen_salt('bf')))", [
+      req.body.username
+    ])
+*/
+});
+/*
+, function(err) {
       if (err) { return next(err); }
       var user = {
         id: this.lastID,
@@ -172,9 +163,9 @@ router.post('/signup', function(req, res, next) {
       req.login(user, function(err) {
         if (err) { return next(err); }
         res.redirect('/');
-      });
+      )};
     });
   });
-});
+*/
 
 module.exports = router;
