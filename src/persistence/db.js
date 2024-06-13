@@ -42,24 +42,13 @@ async function init() {
 }
 
 async function signin(username, password, cb) {
-  client.query('SELECT * FROM users WHERE username = ?', [ username ], function(err, row) {
-    if (err) { return cb(err); }
-    if (!row) { return cb(null, false, { message: 'Incorrect username or password.'   }); }
-  client.query("SELECT id FROM users WHERE username = ? AND password = crypt(? , password)", [ username, password ]);
-})}
-
-
-
-
-
-
-
-
-/*      if (err) { return cb(err); }
-      if (!crypto.timingSafeEqual(row.hashed_password, hashedPassword)) {
-        return cb(null, false, { message: 'Incorrect username or password.' });
-      }
-      return cb(null, row); */
+  client.query('SELECT * FROM users WHERE username = $1 AND hashed_password = crypt($2 , hashed_password)', [ username, password ], function(err,row){
+    if (err) {return cb(err); }
+    if (!row) { return cb(null, false, { message: 'Incorrect username or password.'   })}; 
+    console.log(row[0]);
+    return cb(null, row[0]); 
+  });
+}
 
 // Get all items from the table
 async function signup(req, res, signup) {
