@@ -42,11 +42,13 @@ async function init() {
 }
 
 async function signin(username, password, cb) {
-  client.query('SELECT * FROM users WHERE username = $1 AND hashed_password = crypt($2 , hashed_password)', [ username, password ], function(err,row){
+  console.log('Signing in for', username);
+  await client.query('SELECT * FROM users WHERE username = $1 AND hashed_password = crypt($2 , hashed_password)', [ username, password ], function(err,res){
+    console.log('Result from query', res);
     if (err) {return cb(err); }
-    if (!row) { return cb(null, false, { message: 'Incorrect username or password.'   })}; 
-    console.log(row[0]);
-    return cb(null, row[0]); 
+    if (!res.rowCount) { return cb(null, false, { message: 'Incorrect username or password.'   })}; 
+    console.log('Login successful for', res.rows[0].username);
+    return cb(null, res.rows[0]); 
   });
 }
 
